@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - College Digital Visitor Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+</head>
+<body class="login-page-body">
+
+  <div class="login-card">
+    <div style="margin-bottom: 12px;">
+      <a href="index.html" style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">
+        ← Back to Homepage
+      </a>
+    </div>
+
+    <div class="login-header">
+      <div class="login-logo">
+        <a href="index.html">
+          <img src="assets/logo.svg" alt="College Logo">
+        </a>
+      </div>
+      <h1 class="login-title">College Digital Visitor Management System</h1>
+      <p class="login-subtitle">Campus Gate & Security Access Portal</p>
+    </div>
+
+    <div class="login-body">
+      <form id="loginForm" onsubmit="handleMockLogin(event)">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Username or Email <span class="required">*</span></label>
+          <div class="input-icon-wrapper">
+            <span class="input-icon">👤</span>
+            <input type="text" id="loginEmail" class="form-control" placeholder="admin@college.edu" required value="admin@college.edu">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password <span class="required">*</span></label>
+          <div class="input-icon-wrapper">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required value="admin123">
+          </div>
+        </div>
+
+        <div class="login-footer-links">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--text-muted);">
+            <input type="checkbox" id="rememberMe" checked> Remember me
+          </label>
+          <a href="#" onclick="showForgotPasswordModal(event)" style="font-weight: 600;">Forgot Password?</a>
+        </div>
+
+        <button type="submit" id="btnLogin" class="btn btn-primary btn-block btn-lg">
+          Sign In to Campus Portal ➔
+        </button>
+      </form>
+
+      <!-- Quick Demo Access Box for Project Evaluators -->
+      <div class="demo-credentials-box">
+        <div><strong>🎓 Project Demo Quick-Access:</strong></div>
+        <p style="margin-top: 2px;">Click below to auto-fill credentials and enter dashboard:</p>
+        <div class="demo-buttons-row">
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemoCredentials('admin')">Admin Demo</button>
+          <button type="button" class="btn btn-secondary btn-sm" onclick="fillDemoCredentials('security')">Gate Officer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Forgot Password Modal -->
+  <div id="forgotPasswordModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Password Reset Assistance</h3>
+        <button class="modal-close" onclick="closeForgotPasswordModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="color: var(--text-muted); margin-bottom: 16px;">
+          Enter your registered institutional email address. Password reset instructions will be simulated.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="resetEmailInput">Institutional Email</label>
+          <input type="email" id="resetEmailInput" class="form-control" placeholder="e.g. security.desk@college.edu">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeForgotPasswordModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="simulatePasswordReset()">Send Reset Link</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    function handleMockLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnLogin');
+      btn.disabled = true;
+      btn.textContent = 'Authenticating...';
+      
+      setTimeout(() => {
+        App.showToast('Login successful! Welcome to Campus Visitor Management.', 'success');
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 600);
+      }, 700);
+    }
+
+    function fillDemoCredentials(role) {
+      if (role === 'admin') {
+        document.getElementById('loginEmail').value = 'admin@college.edu';
+        document.getElementById('loginPassword').value = 'admin123';
+      } else {
+        document.getElementById('loginEmail').value = 'security.gate1@college.edu';
+        document.getElementById('loginPassword').value = 'guard2026';
+      }
+      App.showToast(`Loaded ${role} demo credentials. Click Sign In to enter.`, 'info');
+    }
+
+    function showForgotPasswordModal(e) {
+      e.preventDefault();
+      document.getElementById('forgotPasswordModal').classList.add('active');
+    }
+
+    function closeForgotPasswordModal() {
+      document.getElementById('forgotPasswordModal').classList.remove('active');
+    }
+
+    function simulatePasswordReset() {
+      const email = document.getElementById('resetEmailInput').value;
+      if (!email) {
+        alert('Please enter an email address.');
+        return;
+      }
+      closeForgotPasswordModal();
+      App.showToast(`Password reset link simulated for ${email}.`, 'success');
+    }
+  </script>
+</body>
+</html>

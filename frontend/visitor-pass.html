@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Visitor Pass - Digital Visitor Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- Sidebar Navigation (Hidden in Print) -->
+  <aside class="app-sidebar">
+    <div class="sidebar-header">
+      <div class="brand-logo">
+        <img src="assets/logo.svg" alt="College Logo">
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">College Digital</span>
+        <span class="brand-subtitle">Visitor Management System</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-title">Main Menu</span>
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="register.html" class="nav-item">
+        <span class="nav-icon">📝</span>
+        <span>Register Visitor</span>
+      </a>
+      <a href="visitors.html" class="nav-item">
+        <span class="nav-icon">👥</span>
+        <span>Visitor Records</span>
+      </a>
+      <a href="entry-exit.html" class="nav-item">
+        <span class="nav-icon">🚪</span>
+        <span>Entry / Exit Gate</span>
+      </a>
+      <a href="visitor-pass.html" class="nav-item active">
+        <span class="nav-icon">🎫</span>
+        <span>Digital Pass</span>
+      </a>
+
+      <span class="nav-section-title">Monitoring & Logs</span>
+      <a href="notifications.html" class="nav-item">
+        <span class="nav-icon">🔔</span>
+        <span>Notifications</span>
+        <span class="badge-count notification-badge-count" style="display: none;">0</span>
+      </a>
+      <a href="history.html" class="nav-item">
+        <span class="nav-icon">📜</span>
+        <span>Visitor History</span>
+      </a>
+
+      <span class="nav-section-title">Administration</span>
+      <a href="profile.html" class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span>Settings & Profile</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-mini-profile">
+        <div class="user-avatar">RM</div>
+        <div class="user-mini-info">
+          <span class="user-mini-name bind-user-name">Capt. Mukherjee</span>
+          <span class="user-mini-role bind-user-role">Security Admin</span>
+        </div>
+      </div>
+      <button onclick="App.logout()" class="btn-sidebar-logout" title="Sign Out">🚪</button>
+    </div>
+  </aside>
+
+  <!-- Main Content Layout -->
+  <main class="app-main">
+
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <button id="sidebarToggleBtn" class="sidebar-toggle-btn" aria-label="Toggle Menu">☰</button>
+        <div class="page-breadcrumb">
+          <h1 class="page-title">Digital Visitor Pass</h1>
+          <span class="page-subtitle">Official campus entry badge & verification token</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="campus-clock-pill">
+          <span class="clock-live-dot"></span>
+          <span id="liveCampusClock">Mon, Aug 17, 2026</span>
+        </div>
+
+        <a href="notifications.html" class="header-action-btn" title="View Notifications">
+          <span>🔔</span>
+          <span class="btn-badge notification-badge-count" style="display: none;">0</span>
+        </a>
+
+        <a href="profile.html" class="header-user-badge">
+          <div class="user-avatar" style="width: 30px; height: 30px; font-size: 0.75rem;">RM</div>
+          <span class="bind-user-name">Security Admin</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Pass Content Body -->
+    <div class="app-content">
+
+      <!-- Action Toolbar (Hidden during physical print) -->
+      <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; max-width: 480px; margin: 0 auto 16px auto;">
+        <a href="visitors.html" class="btn btn-secondary btn-sm">
+          ← Back to Visitor Records
+        </a>
+        <div style="display: flex; gap: 8px;">
+          <button onclick="window.print()" class="btn btn-primary btn-sm">
+            🖨️ Print Pass
+          </button>
+          <button onclick="App.showToast('Digital pass link copied to clipboard.', 'success')" class="btn btn-secondary btn-sm">
+            📋 Share
+          </button>
+        </div>
+      </div>
+
+      <!-- Institutional Visitor Pass Card -->
+      <div class="pass-wrapper">
+        <div class="pass-card" id="printablePassCard">
+          
+          <!-- Pass Header -->
+          <div class="pass-header">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px;">
+              <div style="width: 32px; height: 32px; background: white; border-radius: 6px; padding: 2px;">
+                <img src="assets/logo.svg" alt="Seal" style="width: 100%; height: 100%;">
+              </div>
+              <h2 class="pass-college-title">College Digital visitor management system</h2>
+            </div>
+            <div class="pass-subtitle">Official Campus Visitor Pass</div>
+          </div>
+
+          <!-- Pass Body -->
+          <div class="pass-body">
+            
+            <div class="pass-badge-id-strip">
+              <div>
+                <div style="font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Pass Number</div>
+                <div id="passVisitorId" class="pass-id-num">VIS-2026-001</div>
+              </div>
+              <div>
+                <span id="passStatusBadge" class="badge badge-inside">Inside Campus</span>
+              </div>
+            </div>
+
+            <!-- Profile Block -->
+            <div class="pass-profile-section">
+              <div class="pass-avatar">👤</div>
+              <div class="pass-name-block">
+                <h3 id="passVisitorName">Dr. Rajesh Kumar</h3>
+                <div id="passVisitorPhone" class="pass-contact">📞 9876543210</div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;" id="passIdProof">
+                  Aadhaar / National ID (8942-5120-3341)
+                </div>
+              </div>
+            </div>
+
+            <!-- Details Grid -->
+            <div class="pass-details-grid">
+              <div class="pass-detail-item">
+                <span class="pass-detail-label">Department / Wing</span>
+                <span id="passDepartment" class="pass-detail-val">Computer Science & Engg</span>
+              </div>
+              <div class="pass-detail-item">
+                <span class="pass-detail-label">Host / Faculty</span>
+                <span id="passHostName" class="pass-detail-val">Prof. Suresh Sharma</span>
+              </div>
+              <div class="pass-detail-item">
+                <span class="pass-detail-label">Purpose of Visit</span>
+                <span id="passPurpose" class="pass-detail-val">Guest Lecture / AI Workshop</span>
+              </div>
+              <div class="pass-detail-item">
+                <span class="pass-detail-label">Visit Date</span>
+                <span id="passDate" class="pass-detail-val">2026-08-17</span>
+              </div>
+              <div class="pass-detail-item">
+                <span class="pass-detail-label">Entry Time</span>
+                <span id="passEntryTime" class="pass-detail-val">09:30 AM</span>
+              </div>
+              <div class="pass-detail-item">
+                <span class="pass-detail-label">Validity</span>
+                <span class="pass-detail-val" style="color: var(--success);">Same Day (Valid 8 Hours)</span>
+              </div>
+            </div>
+
+            <!-- Dynamic QR Code Container -->
+            <div class="pass-qr-container">
+              <div class="pass-qr-code" id="passQrCodeContainer">
+                <!-- Dynamically generated SVG QR code inserted here -->
+              </div>
+              <span class="pass-qr-caption">Scan at Security Checkpoints for Entry / Exit</span>
+            </div>
+
+          </div>
+
+          <!-- Security Footer -->
+          <div class="pass-footer-terms">
+            <div><strong>Security Instructions:</strong></div>
+            Please wear this badge visibly while inside campus premises. Return or scan this pass at the gate before exiting.
+          </div>
+
+        </div>
+
+        <!-- Pass Action Buttons (Screen only) -->
+        <div class="pass-actions-bar no-print">
+          <button onclick="window.print()" class="btn btn-primary">
+            🖨️ Print Visitor Pass
+          </button>
+          <a href="visitors.html" class="btn btn-secondary">
+            View All Visitors
+          </a>
+          <a href="entry-exit.html" class="btn btn-outline-primary">
+            Gate Console ➔
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/visitors.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    VisitorController.initVisitorPass();
+  });
+</script>
+</body>
+</html>

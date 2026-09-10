@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visitor Registration - Digital Visitor Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- Sidebar Navigation -->
+  <aside class="app-sidebar">
+    <div class="sidebar-header">
+      <div class="brand-logo">
+        <img src="assets/logo.svg" alt="College Logo">
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">College Digital</span>
+        <span class="brand-subtitle">Visitor Management System</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-title">Main Menu</span>
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="register.html" class="nav-item active">
+        <span class="nav-icon">📝</span>
+        <span>Register Visitor</span>
+      </a>
+      <a href="visitors.html" class="nav-item">
+        <span class="nav-icon">👥</span>
+        <span>Visitor Records</span>
+      </a>
+      <a href="entry-exit.html" class="nav-item">
+        <span class="nav-icon">🚪</span>
+        <span>Entry / Exit Gate</span>
+      </a>
+      <a href="visitor-pass.html" class="nav-item">
+        <span class="nav-icon">🎫</span>
+        <span>Digital Pass</span>
+      </a>
+
+      <span class="nav-section-title">Monitoring & Logs</span>
+      <a href="notifications.html" class="nav-item">
+        <span class="nav-icon">🔔</span>
+        <span>Notifications</span>
+        <span class="badge-count notification-badge-count" style="display: none;">0</span>
+      </a>
+      <a href="history.html" class="nav-item">
+        <span class="nav-icon">📜</span>
+        <span>Visitor History</span>
+      </a>
+
+      <span class="nav-section-title">Administration</span>
+      <a href="profile.html" class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span>Settings & Profile</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-mini-profile">
+        <div class="user-avatar">RM</div>
+        <div class="user-mini-info">
+          <span class="user-mini-name bind-user-name">Capt. Mukherjee</span>
+          <span class="user-mini-role bind-user-role">Security Admin</span>
+        </div>
+      </div>
+      <button onclick="App.logout()" class="btn-sidebar-logout" title="Sign Out">🚪</button>
+    </div>
+  </aside>
+
+  <!-- Main Content Layout -->
+  <main class="app-main">
+
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <button id="sidebarToggleBtn" class="sidebar-toggle-btn" aria-label="Toggle Menu">☰</button>
+        <div class="page-breadcrumb">
+          <h1 class="page-title">Visitor Registration Form</h1>
+          <span class="page-subtitle">Register guest arrival and issue digital campus gate pass</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="campus-clock-pill">
+          <span class="clock-live-dot"></span>
+          <span id="liveCampusClock">Mon, Aug 17, 2026</span>
+        </div>
+
+        <a href="notifications.html" class="header-action-btn" title="View Notifications">
+          <span>🔔</span>
+          <span class="btn-badge notification-badge-count" style="display: none;">0</span>
+        </a>
+
+        <a href="profile.html" class="header-user-badge">
+          <div class="user-avatar" style="width: 30px; height: 30px; font-size: 0.75rem;">RM</div>
+          <span class="bind-user-name">Security Admin</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Registration Content Body -->
+    <div class="app-content">
+
+      <div class="card" style="max-width: 900px; margin: 0 auto;">
+        <div class="card-header">
+          <div>
+            <h2 class="card-title">New Visitor Entry Pass Request</h2>
+            <p class="card-subtitle">Please fill in accurate visitor credentials and host department details</p>
+          </div>
+          <button type="button" id="btnAutoFillDemo" class="btn btn-secondary btn-sm" title="Populate realistic dummy data for testing">
+            ⚡ Fill Sample Data
+          </button>
+        </div>
+
+        <form id="visitorRegistrationForm" novalidate>
+          
+          <h3 style="font-size: 1rem; color: var(--primary); margin-bottom: 14px; padding-bottom: 6px; border-bottom: 2px solid var(--primary-light);">
+            1. Visitor Personal Information
+          </h3>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="regName">
+                Visitor Full Name <span class="required">*</span>
+              </label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon">👤</span>
+                <input type="text" id="regName" class="form-control" placeholder="e.g. Dr. Rajesh Kumar" required>
+              </div>
+              <div class="invalid-feedback"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regPhone">
+                Contact Number (10 Digits) <span class="required">*</span>
+              </label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon">📞</span>
+                <input type="tel" id="regPhone" class="form-control" placeholder="e.g. 9876543210" maxlength="10" required>
+              </div>
+              <div class="invalid-feedback"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regEmail">Email Address (Optional)</label>
+              <div class="input-icon-wrapper">
+                <span class="input-icon">✉️</span>
+                <input type="email" id="regEmail" class="form-control" placeholder="e.g. visitor@example.com">
+              </div>
+              <div class="invalid-feedback"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regIdType">Government / Photo ID Proof Type</label>
+              <select id="regIdType" class="form-control">
+                <option value="Aadhaar / National ID">Aadhaar / National ID</option>
+                <option value="Driving License">Driving License</option>
+                <option value="PAN Card">PAN Card</option>
+                <option value="Passport">Passport</option>
+                <option value="Company / Employee ID">Company / Employee ID</option>
+                <option value="Student ID">Student ID</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regIdNumber">ID Document Number (Optional)</label>
+              <input type="text" id="regIdNumber" class="form-control" placeholder="e.g. DL-04201800912">
+            </div>
+          </div>
+
+          <h3 style="font-size: 1rem; color: var(--primary); margin: 24px 0 14px 0; padding-bottom: 6px; border-bottom: 2px solid var(--primary-light);">
+            2. Visit & Department Information
+          </h3>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="regPurpose">
+                Purpose of Visit <span class="required">*</span>
+              </label>
+              <select id="regPurpose" class="form-control" required>
+                <option value="">-- Select Purpose --</option>
+                <option value="Guest Lecture / AI Workshop">Guest Lecture / Workshop</option>
+                <option value="Parent / Academic Progress Discussion">Parent Meeting / Academic Query</option>
+                <option value="Campus Placement & Recruitment Drive">Placement / Campus Recruitment</option>
+                <option value="Laboratory Equipment Maintenance">Vendor / Equipment Maintenance</option>
+                <option value="Campus Tour & Admission Query">Prospective Student / Campus Tour</option>
+                <option value="External Examiner / PhD Viva Voce">Examination / Viva Voce</option>
+                <option value="Official Administrative Meeting">Administrative Meeting</option>
+                <option value="Fee / Document Verification">Fee & Document Verification</option>
+              </select>
+              <div class="invalid-feedback"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regDepartment">
+                Department / Wing to Visit <span class="required">*</span>
+              </label>
+              <select id="regDepartment" class="form-control" required>
+                <option value="">-- Select Department --</option>
+                <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                <option value="Electronics & Communication">Electronics & Communication</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Dean Office / Placement Cell">Dean Office / Placement Cell</option>
+                <option value="Admissions Office">Admissions Office</option>
+                <option value="Examination Cell">Examination Cell</option>
+                <option value="Central Library">Central Library</option>
+                <option value="Accounts & Administration">Accounts & Administration</option>
+              </select>
+              <div class="invalid-feedback"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regHostName">
+                Person / Faculty to Meet <span class="required">*</span>
+              </label>
+              <input type="text" id="regHostName" class="form-control" placeholder="e.g. Prof. Suresh Sharma (HOD)" required>
+              <div class="invalid-feedback"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regDate">
+                Date of Visit <span class="required">*</span>
+              </label>
+              <input type="date" id="regDate" class="form-control" required>
+              <div class="invalid-feedback"></div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regTime">Expected Entry Time</label>
+              <input type="time" id="regTime" class="form-control">
+            </div>
+          </div>
+
+          <h3 style="font-size: 1rem; color: var(--primary); margin: 24px 0 14px 0; padding-bottom: 6px; border-bottom: 2px solid var(--primary-light);">
+            3. Vehicle & Security Details (Optional)
+          </h3>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label" for="regVehicleNo">Vehicle Registration Number</label>
+              <input type="text" id="regVehicleNo" class="form-control" placeholder="e.g. KA-05-MH-2024 or Pedestrian">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="regBelongings">Carried Belongings (Laptops, Tools)</label>
+              <input type="text" id="regBelongings" class="form-control" placeholder="e.g. Laptop, Tool box, None">
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label" for="regNotes">Special Remarks / Security Notes</label>
+              <textarea id="regNotes" class="form-control" rows="2" placeholder="e.g. Escort required for Lab 304, authorized parking in Slot B..."></textarea>
+            </div>
+          </div>
+
+          <!-- Form Action Buttons -->
+          <div class="form-actions">
+            <button type="button" id="btnResetForm" class="btn btn-secondary">
+              🔄 Reset Form
+            </button>
+            <button type="submit" id="btnSubmitRegistration" class="btn btn-primary btn-lg">
+              🎫 Register & Issue Digital Pass
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<!-- Registration Success Modal -->
+<div id="registrationSuccessModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title">🎉 Registration Successful!</h3>
+      <button class="modal-close" onclick="App.closeModal('registrationSuccessModal')">&times;</button>
+    </div>
+    <div class="modal-body" style="text-align: center;">
+      <div style="font-size: 3rem; margin-bottom: 10px;">✅</div>
+      <h4 style="font-size: 1.25rem; color: var(--primary);">Visitor Gate Pass Generated</h4>
+      <p style="color: var(--text-muted); margin-top: 4px;">
+        Visitor record for <strong id="modalSuccessVisitorName">Visitor</strong> has been registered in the campus log.
+      </p>
+
+      <div style="background: #eff6ff; border: 2px dashed #93c5fd; border-radius: var(--radius-md); padding: 16px; margin: 18px 0;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Assigned Visitor ID</span>
+        <div id="modalSuccessVisitorId" style="font-family: monospace; font-size: 1.6rem; font-weight: 800; color: var(--primary); margin-top: 4px;">
+          VIS-2026-000
+        </div>
+      </div>
+      
+      <p style="font-size: 0.85rem; color: #475569;">
+        You can now print the physical badge or view the digital QR pass.
+      </p>
+    </div>
+    <div class="modal-footer" style="justify-content: center; gap: 14px;">
+      <button type="button" class="btn btn-secondary" onclick="App.closeModal('registrationSuccessModal')">Register Another</button>
+      <a id="modalSuccessPassBtn" href="visitor-pass.html" class="btn btn-primary">
+        🎫 View Digital Pass ➔
+      </a>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/validation.js"></script>
+<script src="js/app.js"></script>
+<script src="js/visitors.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    VisitorController.initRegistration();
+  });
+</script>
+</body>
+</html>

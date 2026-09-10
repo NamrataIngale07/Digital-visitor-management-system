@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entry / Exit Management - Digital Visitor Management System</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- Sidebar Navigation -->
+  <aside class="app-sidebar">
+    <div class="sidebar-header">
+      <div class="brand-logo">
+        <img src="assets/logo.svg" alt="College Logo">
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">College Digital</span>
+        <span class="brand-subtitle">Visitor Management System</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <span class="nav-section-title">Main Menu</span>
+      <a href="dashboard.html" class="nav-item">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="register.html" class="nav-item">
+        <span class="nav-icon">📝</span>
+        <span>Register Visitor</span>
+      </a>
+      <a href="visitors.html" class="nav-item">
+        <span class="nav-icon">👥</span>
+        <span>Visitor Records</span>
+      </a>
+      <a href="entry-exit.html" class="nav-item active">
+        <span class="nav-icon">🚪</span>
+        <span>Entry / Exit Gate</span>
+      </a>
+      <a href="visitor-pass.html" class="nav-item">
+        <span class="nav-icon">🎫</span>
+        <span>Digital Pass</span>
+      </a>
+
+      <span class="nav-section-title">Monitoring & Logs</span>
+      <a href="notifications.html" class="nav-item">
+        <span class="nav-icon">🔔</span>
+        <span>Notifications</span>
+        <span class="badge-count notification-badge-count" style="display: none;">0</span>
+      </a>
+      <a href="history.html" class="nav-item">
+        <span class="nav-icon">📜</span>
+        <span>Visitor History</span>
+      </a>
+
+      <span class="nav-section-title">Administration</span>
+      <a href="profile.html" class="nav-item">
+        <span class="nav-icon">⚙️</span>
+        <span>Settings & Profile</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-mini-profile">
+        <div class="user-avatar">RM</div>
+        <div class="user-mini-info">
+          <span class="user-mini-name bind-user-name">Capt. Mukherjee</span>
+          <span class="user-mini-role bind-user-role">Security Admin</span>
+        </div>
+      </div>
+      <button onclick="App.logout()" class="btn-sidebar-logout" title="Sign Out">🚪</button>
+    </div>
+  </aside>
+
+  <!-- Main Content Layout -->
+  <main class="app-main">
+
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="header-left">
+        <button id="sidebarToggleBtn" class="sidebar-toggle-btn" aria-label="Toggle Menu">☰</button>
+        <div class="page-breadcrumb">
+          <h1 class="page-title">Campus Gate Entry & Exit Management</h1>
+          <span class="page-subtitle">Fast security checkpoint console for marking arrivals and departures</span>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="campus-clock-pill">
+          <span class="clock-live-dot"></span>
+          <span id="liveCampusClock">Mon, Aug 17, 2026</span>
+        </div>
+
+        <a href="notifications.html" class="header-action-btn" title="View Notifications">
+          <span>🔔</span>
+          <span class="btn-badge notification-badge-count" style="display: none;">0</span>
+        </a>
+
+        <a href="profile.html" class="header-user-badge">
+          <div class="user-avatar" style="width: 30px; height: 30px; font-size: 0.75rem;">RM</div>
+          <span class="bind-user-name">Security Admin</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Entry / Exit Content Body -->
+    <div class="app-content">
+
+      <!-- Fast Lookup Search Bar -->
+      <div class="card" style="margin-bottom: 20px; padding: 18px 24px;">
+        <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 280px; position: relative;">
+            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8;">🔍</span>
+            <input type="text" id="gateSearchInput" class="form-control" placeholder="Quick Scan or Type Visitor ID, Name, Phone..." style="padding-left: 38px;">
+          </div>
+          <a href="register.html" class="btn btn-primary btn-sm">
+            ➕ Register New Visitor
+          </a>
+        </div>
+      </div>
+
+      <!-- Split Gate Console Grid -->
+      <div class="gate-console-grid">
+
+        <!-- Column 1: Currently Inside Campus (Action: Mark Exit) -->
+        <div>
+          <div class="gate-card-header inside">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>🟢</span>
+              <span>Currently Inside Campus</span>
+            </div>
+            <span id="gateInsideCount" style="background: rgba(255,255,255,0.25); padding: 2px 10px; border-radius: 999px; font-size: 0.85rem;">0</span>
+          </div>
+          <div class="gate-list" id="gateInsideList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Column 2: Completed / Exited (Action: Mark Re-Entry) -->
+        <div>
+          <div class="gate-card-header pending">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span>⚪</span>
+              <span>Exited / Departed Today</span>
+            </div>
+            <span id="gateExitedCount" style="background: rgba(255,255,255,0.25); padding: 2px 10px; border-radius: 999px; font-size: 0.85rem;">0</span>
+          </div>
+          <div class="gate-list" id="gatePendingList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/visitors.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    VisitorController.initGateConsole();
+  });
+</script>
+</body>
+</html>

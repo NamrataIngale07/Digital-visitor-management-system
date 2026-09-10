@@ -1,0 +1,23 @@
+{
+  "name": "digital-visitor-management-system",
+  "version": "1.0.0",
+  "description": "Digital Visitor Management System for College - Frontend",
+  "scripts": {
+    "dev": "serve frontend -p 3000",
+    "start": "serve frontend -p 3000",
+    "preview": "serve frontend -p 3000"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  },
+  "keywords": [
+    "visitor-management",
+    "college-project",
+    "frontend",
+    "html5",
+    "css3",
+    "javascript"
+  ],
+  "author": "",
+  "license": "ISC"
+}

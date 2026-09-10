@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="gradPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="100%" stop-color="#2563eb" />
+    </linearGradient>
+    <linearGradient id="gradGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  <!-- Shield Background -->
+  <path d="M50 5 L85 18 C85 55 68 82 50 95 C32 82 15 55 15 18 Z" fill="url(#gradPrimary)" stroke="#1e293b" stroke-width="2"/>
+  <!-- Inner Shield Border -->
+  <path d="M50 11 L79 22 C79 53 64 76 50 87 C36 76 21 53 21 22 Z" fill="none" stroke="url(#gradGold)" stroke-width="2" stroke-dasharray="2 1"/>
+  <!-- University Pillar / Building Icon -->
+  <path d="M35 32 L50 24 L65 32 L65 35 L35 35 Z" fill="#ffffff"/>
+  <rect x="37" y="37" width="5" height="18" fill="#ffffff" rx="1"/>
+  <rect x="47.5" y="37" width="5" height="18" fill="#ffffff" rx="1"/>
+  <rect x="58" y="37" width="5" height="18" fill="#ffffff" rx="1"/>
+  <rect x="33" y="56" width="34" height="4" fill="#ffffff" rx="1"/>
+  <!-- Open Book -->
+  <path d="M50 63 C44 60 36 61 32 63 L32 75 C36 73 44 72 50 75 C56 72 64 73 68 75 L68 63 C64 61 56 60 50 63 Z" fill="url(#gradGold)"/>
+  <line x1="50" y1="63" x2="50" y2="75" stroke="#ffffff" stroke-width="1.5"/>
+  <!-- Stars -->
+  <circle cx="28" cy="27" r="1.5" fill="#f59e0b"/>
+  <circle cx="72" cy="27" r="1.5" fill="#f59e0b"/>
+</svg>

@@ -85,7 +85,7 @@
         <button id="sidebarToggleBtn" class="sidebar-toggle-btn" aria-label="Toggle Menu">☰</button>
         <div class="page-breadcrumb">
           <h1 class="page-title">Campus Notifications & Alerts</h1>
-          <span class="page-subtitle">Arrival dispatches, host notifications, and gate security updates</span>
+          <span class="page-subtitle">Arrival dispatches, host notifications, and gate security updates in Firestore</span>
         </div>
       </div>
 
@@ -131,7 +131,7 @@
 
       <!-- Notifications List Container -->
       <div class="notifications-list" id="notificationsContainer">
-        <!-- Dynamically populated via visitors.js -->
+        <!-- Dynamically populated via Cloud Firestore -->
       </div>
 
     </div>
@@ -139,6 +139,15 @@
 
 </div>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- App Configuration & Services -->
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/visitor-service.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/visitors.js"></script>

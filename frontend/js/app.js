@@ -1,6 +1,6 @@
 /**
  * Digital Visitor Management System for College
- * Global Application Controller (Navigation, Sidebar, Clock, Toasts, Modals)
+ * Global Application Controller (Navigation, Sidebar, Clock, Toasts, Modals, Auth)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -9,22 +9,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const App = {
   init() {
+    const rawPath = window.location.pathname.toLowerCase();
+    const currentFile = rawPath.split('/').pop().replace(/\.html$/, '');
+    const isPublicPage = currentFile === 'login' || currentFile === 'index' || currentFile === '' || rawPath.endsWith('/') || rawPath.includes('login');
+
+    // 1. Enforce authentication on protected pages only
+    if (!isPublicPage && typeof AuthService !== 'undefined') {
+      AuthService.requireAuth();
+    }
+
     this.highlightActiveNav();
     this.setupSidebarToggle();
     this.startLiveClock();
-    this.updateNotificationBadges();
-    this.bindUserProfile();
+    if (!isPublicPage) {
+      this.updateNotificationBadges();
+      this.bindUserProfile();
+    }
     this.setupGlobalShortcuts();
   },
 
   // Highlight active page link in sidebar
   highlightActiveNav() {
-    const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+    const rawPath = window.location.pathname.toLowerCase();
+    const currentFile = rawPath.split('/').pop().replace(/\.html$/, '') || 'index';
     const navLinks = document.querySelectorAll('.nav-item');
     
     navLinks.forEach(link => {
-      const href = link.getAttribute('href');
-      if (href === currentPath || (currentPath === '' && href === 'dashboard.html')) {
+      const href = (link.getAttribute('href') || '').toLowerCase().replace(/\.html$/, '');
+      if (href === currentFile || (currentFile === '' && href === 'dashboard')) {
         link.classList.add('active');
       } else {
         link.classList.remove('active');
@@ -77,10 +89,19 @@ const App = {
   },
 
   // Update badge counts for unread notifications in topbar and sidebar
-  updateNotificationBadges() {
-    const unreadCount = DataStore.getUnreadNotificationsCount();
+  async updateNotificationBadges() {
+    let unreadCount = 0;
+    try {
+      if (typeof VisitorService !== 'undefined') {
+        unreadCount = await VisitorService.getUnreadNotificationsCount();
+      } else {
+        unreadCount = DataStore.getNotificationsLocal().filter(n => n.unread).length;
+      }
+    } catch (e) {
+      unreadCount = DataStore.getNotificationsLocal().filter(n => n.unread).length;
+    }
+
     const badges = document.querySelectorAll('.notification-badge-count');
-    
     badges.forEach(badge => {
       if (unreadCount > 0) {
         badge.textContent = unreadCount;
@@ -92,18 +113,25 @@ const App = {
   },
 
   // Bind current user profile to UI
-  bindUserProfile() {
-    const user = DataStore.getUser();
+  async bindUserProfile() {
+    let user = null;
+    if (typeof AuthService !== 'undefined') {
+      user = AuthService.getCurrentUser();
+    } else {
+      user = DataStore.getUserLocal();
+    }
     
+    if (!user) return;
+
     const nameEls = document.querySelectorAll('.bind-user-name');
     const roleEls = document.querySelectorAll('.bind-user-role');
     const emailEls = document.querySelectorAll('.bind-user-email');
     const campusEls = document.querySelectorAll('.bind-user-campus');
     
-    nameEls.forEach(el => el.textContent = user.name);
-    roleEls.forEach(el => el.textContent = user.role);
-    emailEls.forEach(el => el.textContent = user.email);
-    campusEls.forEach(el => el.textContent = user.campus);
+    nameEls.forEach(el => el.textContent = user.name || user.displayName || 'Campus Admin');
+    roleEls.forEach(el => el.textContent = user.role || 'Security Admin');
+    emailEls.forEach(el => el.textContent = user.email || 'admin@college.edu');
+    campusEls.forEach(el => el.textContent = user.campus || 'Main North Campus, Block-A Gate 1');
   },
 
   // Toast Notification System
@@ -149,12 +177,16 @@ const App = {
     }
   },
 
-  // Global Mock Logout
-  logout() {
+  // Firebase Sign Out
+  async logout() {
     this.showToast('Signing out...', 'info', 1000);
-    setTimeout(() => {
-      window.location.href = 'login.html';
-    }, 800);
+    setTimeout(async () => {
+      if (typeof AuthService !== 'undefined') {
+        await AuthService.logout();
+      } else {
+        window.location.href = 'login.html';
+      }
+    }, 600);
   },
 
   // Escape key closes modals

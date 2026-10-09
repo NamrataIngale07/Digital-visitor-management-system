@@ -166,6 +166,9 @@
         <button onclick="VisitorController.exportRecordsCSV()" class="quick-action-btn">
           <span>📥</span> Export Daily Log (CSV)
         </button>
+        <button id="btnGateClearData" onclick="VisitorController.clearGateShiftData()" class="quick-action-btn" style="display: none; background: #fff1f2; color: #e11d48; border-color: #fecdd3;" title="Reset this gate officer's shift to 0 visitors">
+          <span>🧹</span> Clear Shift / Reset to 0
+        </button>
       </div>
 
       <div style="display: grid; grid-template-columns: 2.2fr 1fr; gap: 24px;">
@@ -194,7 +197,7 @@
                 </tr>
               </thead>
               <tbody id="dashboardRecentTableBody">
-                <!-- Dynamically populated via visitors.js -->
+                <!-- Dynamically populated via Cloud Firestore -->
               </tbody>
             </table>
           </div>
@@ -210,7 +213,7 @@
           </div>
 
           <div id="deptDistributionList" style="padding-top: 8px;">
-            <!-- Dynamically populated -->
+            <!-- Dynamically populated via Cloud Firestore -->
           </div>
 
           <div style="margin-top: 20px; padding: 14px; background: #f8fafc; border-radius: var(--radius-md); border: 1px dashed var(--border-color); font-size: 0.82rem;">
@@ -226,6 +229,15 @@
 
 </div>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- App Configuration & Services -->
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/visitor-service.js"></script>
 <script src="js/data.js"></script>
 <script src="js/validation.js"></script>
 <script src="js/app.js"></script>

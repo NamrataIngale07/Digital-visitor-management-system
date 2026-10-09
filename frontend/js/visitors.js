@@ -1,20 +1,45 @@
 /**
  * Digital Visitor Management System for College
- * Visitor Logic Module: Dashboard, Registration, Records, Pass, Gate, Notifications & History
+ * Cloud Firestore Visitor Logic Module: Dashboard, Registration, Records, Pass, Gate, Notifications & History
  */
 
 const VisitorController = {
   // --------------------------------------------------------------------------
   // 1. DASHBOARD PAGE LOGIC
   // --------------------------------------------------------------------------
-  initDashboard() {
-    this.renderDashboardStats();
-    this.renderDashboardRecentTable();
-    this.renderDepartmentDistribution();
+  async initDashboard() {
+    // Show Gate Officer shift reset button if active
+    if (typeof DataStore !== 'undefined' && DataStore.isGateOfficer()) {
+      const clearBtn = document.getElementById('btnGateClearData');
+      if (clearBtn) clearBtn.style.display = 'inline-flex';
+    }
+
+    await this.renderDashboardStats();
+    await this.renderDashboardRecentTable();
+    await this.renderDepartmentDistribution();
+
+    // Subscribe to live Firestore changes if enabled
+    if (typeof VisitorService !== 'undefined' && FirebaseApp.isLive) {
+      VisitorService.listenToVisitors(() => {
+        this.refreshCurrentView();
+      });
+    }
   },
 
-  renderDashboardStats() {
-    const stats = DataStore.getDashboardStats();
+  clearGateShiftData() {
+    if (confirm('Are you sure you want to clear all visitor entries for this Gate Officer shift and reset counters to 0?')) {
+      if (typeof DataStore !== 'undefined') {
+        DataStore.clearGateOfficerData();
+      }
+      if (typeof App !== 'undefined') {
+        App.showToast('Gate shift cleared! All visitor counters reset to 0.', 'success');
+      }
+      setTimeout(() => window.location.reload(), 600);
+    }
+  },
+
+  async renderDashboardStats() {
+    const stats = await VisitorService.getDashboardStats();
 
     const elTotal = document.getElementById('statTotalVisitors');
     const elInside = document.getElementById('statInsideVisitors');
@@ -27,14 +52,19 @@ const VisitorController = {
     if (elCompleted) elCompleted.textContent = stats.completed;
   },
 
-  renderDashboardRecentTable() {
+  async renderDashboardRecentTable() {
     const tableBody = document.getElementById('dashboardRecentTableBody');
     if (!tableBody) return;
 
-    const visitors = DataStore.getVisitors().slice(0, 6);
+    const allVisitors = await VisitorService.getVisitors();
+    const visitors = allVisitors.slice(0, 6);
 
     if (visitors.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="7" class="table-empty-state">No visitor records found.</td></tr>`;
+      const isGate = typeof DataStore !== 'undefined' && DataStore.isGateOfficer();
+      const emptyMsg = isGate 
+        ? 'No visitors registered for this gate shift yet. Click "+ Register New Visitor" to record your first visitor.'
+        : 'No visitor records found in database.';
+      tableBody.innerHTML = `<tr><td colspan="7" class="table-empty-state">${emptyMsg}</td></tr>`;
       return;
     }
 
@@ -67,11 +97,11 @@ const VisitorController = {
     `).join('');
   },
 
-  renderDepartmentDistribution() {
+  async renderDepartmentDistribution() {
     const container = document.getElementById('deptDistributionList');
     if (!container) return;
 
-    const visitors = DataStore.getVisitors();
+    const visitors = await VisitorService.getVisitors();
     const deptCounts = {};
 
     visitors.forEach(v => {
@@ -81,8 +111,13 @@ const VisitorController = {
     const sortedDepts = Object.entries(deptCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
     const maxVal = Math.max(...Object.values(deptCounts), 1);
 
+    if (sortedDepts.length === 0) {
+      container.innerHTML = `<div style="color: var(--text-muted); font-size: 0.85rem;">No department visits recorded yet.</div>`;
+      return;
+    }
+
     container.innerHTML = sortedDepts.map(([dept, count]) => {
-      const percentage = Math.round((count / visitors.length) * 100);
+      const percentage = Math.round((count / (visitors.length || 1)) * 100);
       return `
         <div style="margin-bottom: 12px;">
           <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px;">
@@ -97,35 +132,36 @@ const VisitorController = {
     }).join('');
   },
 
-  quickMarkExit(id) {
-    const updated = DataStore.updateVisitorStatus(id, 'Exited');
+  async quickMarkExit(id) {
+    const updated = await VisitorService.updateVisitorStatus(id, 'Exited');
     if (updated) {
       App.showToast(`${updated.name} has been marked as Exited.`, 'success');
-      this.refreshCurrentView();
+      await this.refreshCurrentView();
     }
   },
 
-  quickMarkInside(id) {
-    const updated = DataStore.updateVisitorStatus(id, 'Inside Campus');
+  async quickMarkInside(id) {
+    const updated = await VisitorService.updateVisitorStatus(id, 'Inside Campus');
     if (updated) {
       App.showToast(`${updated.name} is now Marked Inside Campus.`, 'success');
-      this.refreshCurrentView();
+      await this.refreshCurrentView();
     }
   },
 
-  refreshCurrentView() {
-    this.renderDashboardStats();
-    this.renderDashboardRecentTable();
-    this.renderDepartmentDistribution();
-    App.updateNotificationBadges();
+  async refreshCurrentView() {
+    await this.renderDashboardStats();
+    await this.renderDashboardRecentTable();
+    await this.renderDepartmentDistribution();
+    await App.updateNotificationBadges();
     
-    // Also refresh records table if present
     if (document.getElementById('visitorRecordsTableBody')) {
-      this.renderRecordsTable();
+      await this.renderRecordsTable();
     }
-    // Also refresh gate console if present
     if (document.getElementById('gateInsideList')) {
-      this.renderGateConsole();
+      await this.renderGateConsole();
+    }
+    if (document.getElementById('historyTableBody')) {
+      await this.renderHistoryTable();
     }
   },
 
@@ -151,9 +187,9 @@ const VisitorController = {
     }
 
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        this.handleRegistrationSubmit(form);
+        await this.handleRegistrationSubmit(form);
       });
     }
 
@@ -235,8 +271,14 @@ const VisitorController = {
     App.showToast('Sample visitor details loaded!', 'info');
   },
 
-  handleRegistrationSubmit(form) {
+  async handleRegistrationSubmit(form) {
     FormValidator.clearFormErrors(form);
+
+    const submitBtn = document.getElementById('btnSubmitRegistration');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Registering in Firestore...';
+    }
 
     const formData = {
       name: document.getElementById('regName').value,
@@ -257,6 +299,10 @@ const VisitorController = {
     const validation = FormValidator.validateVisitorRegistration(formData);
 
     if (!validation.isValid) {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🎫 Register & Issue Digital Pass';
+      }
       Object.keys(validation.errors).forEach(field => {
         let inputEl = null;
         if (field === 'name') inputEl = document.getElementById('regName');
@@ -275,37 +321,48 @@ const VisitorController = {
       return;
     }
 
-    // Save visitor in DataStore
-    const newVisitor = DataStore.addVisitor(formData);
+    try {
+      // Save visitor in Cloud Firestore
+      const newVisitor = await VisitorService.addVisitor(formData);
 
-    // Show success modal with pass link
-    const modalVisitorId = document.getElementById('modalSuccessVisitorId');
-    const modalVisitorName = document.getElementById('modalSuccessVisitorName');
-    const modalPassLink = document.getElementById('modalSuccessPassBtn');
+      // Show success modal with pass link
+      const modalVisitorId = document.getElementById('modalSuccessVisitorId');
+      const modalVisitorName = document.getElementById('modalSuccessVisitorName');
+      const modalPassLink = document.getElementById('modalSuccessPassBtn');
 
-    if (modalVisitorId) modalVisitorId.textContent = newVisitor.id;
-    if (modalVisitorName) modalVisitorName.textContent = newVisitor.name;
-    if (modalPassLink) modalPassLink.href = `visitor-pass.html?id=${newVisitor.id}`;
+      if (modalVisitorId) modalVisitorId.textContent = newVisitor.id;
+      if (modalVisitorName) modalVisitorName.textContent = newVisitor.name;
+      if (modalPassLink) modalPassLink.href = `visitor-pass.html?id=${newVisitor.id}`;
 
-    App.openModal('registrationSuccessModal');
-    App.showToast(`Visitor ${newVisitor.name} registered successfully!`, 'success');
+      App.openModal('registrationSuccessModal');
+      App.showToast(`Visitor ${newVisitor.name} registered successfully!`, 'success');
+      form.reset();
+    } catch (e) {
+      console.error('Registration error:', e);
+      App.showToast('Failed to register visitor. Please try again.', 'error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🎫 Register & Issue Digital Pass';
+      }
+    }
   },
 
   // --------------------------------------------------------------------------
   // 3. DIGITAL VISITOR PASS PAGE LOGIC
   // --------------------------------------------------------------------------
-  initVisitorPass() {
+  async initVisitorPass() {
     const urlParams = new URLSearchParams(window.location.search);
     const visitorId = urlParams.get('id');
 
     let visitor = null;
     if (visitorId) {
-      visitor = DataStore.getVisitorById(visitorId);
+      visitor = await VisitorService.getVisitorById(visitorId);
     }
 
     // If not found by ID or no ID provided, default to the latest visitor
     if (!visitor) {
-      const visitors = DataStore.getVisitors();
+      const visitors = await VisitorService.getVisitors();
       visitor = visitors.length > 0 ? visitors[0] : null;
     }
 
@@ -341,7 +398,7 @@ const VisitorController = {
       statusEl.textContent = visitor.status;
     }
 
-    // QR Code rendering
+    // Dynamic QR Code rendering
     const qrContainer = document.getElementById('passQrCodeContainer');
     if (qrContainer) {
       const qrData = `COLLEGE-PASS|ID:${visitor.id}|NAME:${visitor.name}|DEPT:${visitor.department}|DATE:${visitor.date}|STATUS:${visitor.status}`;
@@ -352,12 +409,12 @@ const VisitorController = {
   // --------------------------------------------------------------------------
   // 4. VISITOR RECORDS PAGE LOGIC
   // --------------------------------------------------------------------------
-  initRecords() {
-    this.renderRecordsTable();
+  async initRecords() {
+    await this.renderRecordsTable();
     this.setupRecordFilters();
   },
 
-  renderRecordsTable() {
+  async renderRecordsTable() {
     const tableBody = document.getElementById('visitorRecordsTableBody');
     const recordsCountEl = document.getElementById('recordsCountDisplay');
     if (!tableBody) return;
@@ -368,16 +425,16 @@ const VisitorController = {
     const dateFilter = document.getElementById('recordDateFilter')?.value || 'ALL';
 
     const today = new Date().toISOString().split('T')[0];
-    let visitors = DataStore.getVisitors();
+    let visitors = await VisitorService.getVisitors();
 
     // Apply Search
     if (searchTerm) {
       visitors = visitors.filter(v => 
-        v.name.toLowerCase().includes(searchTerm) ||
-        v.id.toLowerCase().includes(searchTerm) ||
-        v.phone.includes(searchTerm) ||
-        v.hostName.toLowerCase().includes(searchTerm) ||
-        v.purpose.toLowerCase().includes(searchTerm)
+        (v.name || '').toLowerCase().includes(searchTerm) ||
+        (v.id || '').toLowerCase().includes(searchTerm) ||
+        (v.phone || '').includes(searchTerm) ||
+        (v.hostName || '').toLowerCase().includes(searchTerm) ||
+        (v.purpose || '').toLowerCase().includes(searchTerm)
       );
     }
 
@@ -464,8 +521,8 @@ const VisitorController = {
     }
   },
 
-  exportRecordsCSV() {
-    const visitors = DataStore.getVisitors();
+  async exportRecordsCSV() {
+    const visitors = await VisitorService.getVisitors();
     if (visitors.length === 0) {
       App.showToast('No records available to export.', 'warning');
       return;
@@ -502,17 +559,17 @@ const VisitorController = {
   // --------------------------------------------------------------------------
   // 5. VISITOR DETAILS PAGE LOGIC
   // --------------------------------------------------------------------------
-  initVisitorDetails() {
+  async initVisitorDetails() {
     const urlParams = new URLSearchParams(window.location.search);
     const visitorId = urlParams.get('id');
 
     let visitor = null;
     if (visitorId) {
-      visitor = DataStore.getVisitorById(visitorId);
+      visitor = await VisitorService.getVisitorById(visitorId);
     }
 
     if (!visitor) {
-      const visitors = DataStore.getVisitors();
+      const visitors = await VisitorService.getVisitors();
       visitor = visitors.length > 0 ? visitors[0] : null;
     }
 
@@ -520,7 +577,7 @@ const VisitorController = {
       document.querySelector('.app-content').innerHTML = `
         <div class="card" style="text-align: center; padding: 48px;">
           <h3>Visitor Not Found</h3>
-          <p style="color: var(--text-muted); margin: 10px 0 20px 0;">The requested visitor record could not be loaded.</p>
+          <p style="color: var(--text-muted); margin: 10px 0 20px 0;">The requested visitor record could not be loaded from Firestore.</p>
           <a href="visitors.html" class="btn btn-primary">Back to Visitors List</a>
         </div>
       `;
@@ -562,16 +619,16 @@ const VisitorController = {
       if (v.status === 'Inside Campus') {
         actionToggleBtn.className = 'btn btn-danger';
         actionToggleBtn.textContent = '🚪 Mark Visitor Exit';
-        actionToggleBtn.onclick = () => {
-          DataStore.updateVisitorStatus(v.id, 'Exited');
+        actionToggleBtn.onclick = async () => {
+          await VisitorService.updateVisitorStatus(v.id, 'Exited');
           App.showToast('Visitor marked as Exited.', 'success');
           window.location.reload();
         };
       } else {
         actionToggleBtn.className = 'btn btn-success';
         actionToggleBtn.textContent = '↩️ Mark Re-Entry';
-        actionToggleBtn.onclick = () => {
-          DataStore.updateVisitorStatus(v.id, 'Inside Campus');
+        actionToggleBtn.onclick = async () => {
+          await VisitorService.updateVisitorStatus(v.id, 'Inside Campus');
           App.showToast('Visitor marked Inside Campus.', 'success');
           window.location.reload();
         };
@@ -582,16 +639,23 @@ const VisitorController = {
   // --------------------------------------------------------------------------
   // 6. GATE ENTRY / EXIT CONSOLE LOGIC
   // --------------------------------------------------------------------------
-  initGateConsole() {
-    this.renderGateConsole();
+  async initGateConsole() {
+    await this.renderGateConsole();
     
     const searchInput = document.getElementById('gateSearchInput');
     if (searchInput) {
       searchInput.addEventListener('input', () => this.renderGateConsole());
     }
+
+    // Subscribe to live changes
+    if (typeof VisitorService !== 'undefined' && FirebaseApp.isLive) {
+      VisitorService.listenToVisitors(() => {
+        this.renderGateConsole();
+      });
+    }
   },
 
-  renderGateConsole() {
+  async renderGateConsole() {
     const insideListEl = document.getElementById('gateInsideList');
     const pendingListEl = document.getElementById('gatePendingList');
     const insideCountEl = document.getElementById('gateInsideCount');
@@ -600,13 +664,13 @@ const VisitorController = {
     if (!insideListEl || !pendingListEl) return;
 
     const searchTerm = (document.getElementById('gateSearchInput')?.value || '').toLowerCase().trim();
-    let visitors = DataStore.getVisitors();
+    let visitors = await VisitorService.getVisitors();
 
     if (searchTerm) {
       visitors = visitors.filter(v => 
-        v.name.toLowerCase().includes(searchTerm) || 
-        v.id.toLowerCase().includes(searchTerm) || 
-        v.phone.includes(searchTerm)
+        (v.name || '').toLowerCase().includes(searchTerm) || 
+        (v.id || '').toLowerCase().includes(searchTerm) || 
+        (v.phone || '').includes(searchTerm)
       );
     }
 
@@ -665,28 +729,28 @@ const VisitorController = {
   // --------------------------------------------------------------------------
   // 7. NOTIFICATIONS PAGE LOGIC
   // --------------------------------------------------------------------------
-  initNotifications() {
-    this.renderNotificationsList();
+  async initNotifications() {
+    await this.renderNotificationsList();
 
     const btnMarkAll = document.getElementById('btnMarkAllRead');
     const btnClearAll = document.getElementById('btnClearAllNotifs');
     const filterSelect = document.getElementById('notifFilterSelect');
 
     if (btnMarkAll) {
-      btnMarkAll.addEventListener('click', () => {
-        DataStore.markAllNotificationsRead();
+      btnMarkAll.addEventListener('click', async () => {
+        await VisitorService.markAllNotificationsRead();
         App.showToast('All notifications marked as read.', 'success');
-        this.renderNotificationsList();
-        App.updateNotificationBadges();
+        await this.renderNotificationsList();
+        await App.updateNotificationBadges();
       });
     }
 
     if (btnClearAll) {
-      btnClearAll.addEventListener('click', () => {
-        DataStore.clearAllNotifications();
+      btnClearAll.addEventListener('click', async () => {
+        await VisitorService.clearAllNotifications();
         App.showToast('All notifications cleared.', 'info');
-        this.renderNotificationsList();
-        App.updateNotificationBadges();
+        await this.renderNotificationsList();
+        await App.updateNotificationBadges();
       });
     }
 
@@ -695,12 +759,12 @@ const VisitorController = {
     }
   },
 
-  renderNotificationsList() {
+  async renderNotificationsList() {
     const listEl = document.getElementById('notificationsContainer');
     if (!listEl) return;
 
     const filterVal = document.getElementById('notifFilterSelect')?.value || 'ALL';
-    let notifs = DataStore.getNotifications();
+    let notifs = await VisitorService.getNotifications();
 
     if (filterVal === 'UNREAD') {
       notifs = notifs.filter(n => n.unread);
@@ -735,27 +799,27 @@ const VisitorController = {
           </div>
         </div>
         <div>
-          ${n.unread ? `<button onclick="VisitorController.markOneRead('${n.id}')" class="btn btn-secondary btn-sm" title="Mark Read">✓</button>` : ''}
+          ${n.unread ? `<button onclick="VisitorController.markOneRead('${n.id || n.docId}')" class="btn btn-secondary btn-sm" title="Mark Read">✓</button>` : ''}
         </div>
       </div>
     `).join('');
   },
 
-  markOneRead(id) {
-    DataStore.markNotificationRead(id);
-    this.renderNotificationsList();
-    App.updateNotificationBadges();
+  async markOneRead(id) {
+    await VisitorService.markNotificationRead(id);
+    await this.renderNotificationsList();
+    await App.updateNotificationBadges();
   },
 
   // --------------------------------------------------------------------------
   // 8. VISITOR HISTORY PAGE LOGIC
   // --------------------------------------------------------------------------
-  initHistory() {
-    this.renderHistoryTable();
+  async initHistory() {
+    await this.renderHistoryTable();
     this.setupHistoryFilters();
   },
 
-  renderHistoryTable() {
+  async renderHistoryTable() {
     const tableBody = document.getElementById('historyTableBody');
     const totalPastEl = document.getElementById('historyTotalPast');
     const searchInput = document.getElementById('historySearchInput');
@@ -766,8 +830,7 @@ const VisitorController = {
     const searchTerm = (searchInput?.value || '').toLowerCase().trim();
     const deptVal = deptFilter?.value || 'ALL';
 
-    // History focuses on completed visits or all past records
-    let records = DataStore.getVisitors();
+    let records = await VisitorService.getVisitors();
 
     if (deptVal !== 'ALL') {
       records = records.filter(r => r.department === deptVal);
@@ -775,10 +838,10 @@ const VisitorController = {
 
     if (searchTerm) {
       records = records.filter(r => 
-        r.name.toLowerCase().includes(searchTerm) ||
-        r.id.toLowerCase().includes(searchTerm) ||
-        r.hostName.toLowerCase().includes(searchTerm) ||
-        r.purpose.toLowerCase().includes(searchTerm)
+        (r.name || '').toLowerCase().includes(searchTerm) ||
+        (r.id || '').toLowerCase().includes(searchTerm) ||
+        (r.hostName || '').toLowerCase().includes(searchTerm) ||
+        (r.purpose || '').toLowerCase().includes(searchTerm)
       );
     }
 
@@ -825,10 +888,9 @@ const VisitorController = {
   // --------------------------------------------------------------------------
   // 9. PROFILE & SETTINGS PAGE LOGIC
   // --------------------------------------------------------------------------
-  initProfile() {
-    const user = DataStore.getUser();
+  async initProfile() {
+    const user = await VisitorService.getUserProfile();
     
-    // Bind input values
     const nameInput = document.getElementById('profName');
     const roleInput = document.getElementById('profRole');
     const emailInput = document.getElementById('profEmail');
@@ -838,17 +900,17 @@ const VisitorController = {
     const form = document.getElementById('userProfileForm');
     const btnResetData = document.getElementById('btnResetDefaultData');
 
-    if (nameInput) nameInput.value = user.name;
-    if (roleInput) roleInput.value = user.role;
-    if (emailInput) emailInput.value = user.email;
-    if (phoneInput) phoneInput.value = user.phone;
-    if (campusInput) campusInput.value = user.campus;
-    if (shiftInput) shiftInput.value = user.shift;
+    if (nameInput) nameInput.value = user.name || '';
+    if (roleInput) roleInput.value = user.role || '';
+    if (emailInput) emailInput.value = user.email || '';
+    if (phoneInput) phoneInput.value = user.phone || '';
+    if (campusInput) campusInput.value = user.campus || '';
+    if (shiftInput) shiftInput.value = user.shift || '';
 
     if (form) {
-      form.addEventListener('submit', (e) => {
+      form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const updated = DataStore.updateUser({
+        const updated = await VisitorService.updateUserProfile({
           name: nameInput.value,
           role: roleInput.value,
           email: emailInput.value,
@@ -856,16 +918,19 @@ const VisitorController = {
           campus: campusInput.value,
           shift: shiftInput.value
         });
-        App.bindUserProfile();
-        App.showToast('Profile updated successfully!', 'success');
+        await App.bindUserProfile();
+        App.showToast('Profile updated in Firestore successfully!', 'success');
       });
     }
 
     if (btnResetData) {
-      btnResetData.addEventListener('click', () => {
-        if (confirm('Are you sure you want to reset all mock visitor data and notifications to default?')) {
+      btnResetData.addEventListener('click', async () => {
+        if (confirm('Are you sure you want to reset all visitor data and notifications to default?')) {
           DataStore.resetAll();
-          App.showToast('All mock data has been restored to default demo state.', 'success');
+          if (FirebaseApp.isLive) {
+            await VisitorService.seedDefaultData();
+          }
+          App.showToast('Default demo records restored successfully.', 'success');
           setTimeout(() => window.location.reload(), 1000);
         }
       });

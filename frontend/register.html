@@ -290,7 +290,7 @@
       <div style="font-size: 3rem; margin-bottom: 10px;">✅</div>
       <h4 style="font-size: 1.25rem; color: var(--primary);">Visitor Gate Pass Generated</h4>
       <p style="color: var(--text-muted); margin-top: 4px;">
-        Visitor record for <strong id="modalSuccessVisitorName">Visitor</strong> has been registered in the campus log.
+        Visitor record for <strong id="modalSuccessVisitorName">Visitor</strong> has been registered in Cloud Firestore.
       </p>
 
       <div style="background: #eff6ff; border: 2px dashed #93c5fd; border-radius: var(--radius-md); padding: 16px; margin: 18px 0;">
@@ -313,6 +313,15 @@
   </div>
 </div>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- App Configuration & Services -->
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/visitor-service.js"></script>
 <script src="js/data.js"></script>
 <script src="js/validation.js"></script>
 <script src="js/app.js"></script>

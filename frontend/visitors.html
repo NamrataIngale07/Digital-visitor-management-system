@@ -85,7 +85,7 @@
         <button id="sidebarToggleBtn" class="sidebar-toggle-btn" aria-label="Toggle Menu">☰</button>
         <div class="page-breadcrumb">
           <h1 class="page-title">Visitor Records & Logs</h1>
-          <span class="page-subtitle">Search, filter, and inspect campus visitor history</span>
+          <span class="page-subtitle">Search, filter, and inspect campus visitor history in Cloud Firestore</span>
         </div>
       </div>
 
@@ -179,7 +179,7 @@
               </tr>
             </thead>
             <tbody id="visitorRecordsTableBody">
-              <!-- Dynamically rendered via visitors.js -->
+              <!-- Dynamically rendered via Cloud Firestore -->
             </tbody>
           </table>
         </div>
@@ -190,6 +190,15 @@
 
 </div>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- App Configuration & Services -->
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/visitor-service.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/visitors.js"></script>

@@ -85,7 +85,7 @@
         <button id="sidebarToggleBtn" class="sidebar-toggle-btn" aria-label="Toggle Menu">☰</button>
         <div class="page-breadcrumb">
           <h1 class="page-title">Profile & System Preferences</h1>
-          <span class="page-subtitle">Manage campus officer account, station settings, and demo configuration</span>
+          <span class="page-subtitle">Manage campus officer account, station settings, and Firestore configuration</span>
         </div>
       </div>
 
@@ -117,7 +117,7 @@
           <div class="card-header">
             <div>
               <h2 class="card-title">Security Officer & Admin Profile</h2>
-              <p class="card-subtitle">Personal credentials used for issuing visitor gate tokens</p>
+              <p class="card-subtitle">Personal credentials and account synchronized with Cloud Firestore</p>
             </div>
           </div>
 
@@ -156,7 +156,7 @@
 
             <div class="form-actions">
               <button type="submit" class="btn btn-primary">
-                💾 Save Profile Changes
+                💾 Save Profile to Firestore
               </button>
             </div>
           </form>
@@ -201,7 +201,7 @@
             </div>
 
             <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px;">
-              Reset all registered visitors, gate entry logs, and notifications back to the initial sample seed.
+              Reset all registered visitors, gate entry logs, and notifications back to the initial sample seed in Cloud Firestore.
             </p>
 
             <button type="button" id="btnResetDefaultData" class="btn btn-outline-danger btn-block btn-sm">
@@ -218,6 +218,15 @@
 
 </div>
 
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- App Configuration & Services -->
+<script src="js/firebase-config.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/visitor-service.js"></script>
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script src="js/visitors.js"></script>

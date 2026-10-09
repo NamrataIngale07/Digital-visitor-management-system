@@ -1,7 +1,9 @@
 /**
  * Digital Visitor Management System for College
- * Client-Side Mock Data Engine & LocalStorage Repository
- * Designed with clean API service signatures for future REST/Backend migration.
+ * Data Store Layer & Seed Repository
+ * 
+ * Provides local caching, default collegiate seed entities, QR generation,
+ * and seamlessly synchronizes with Cloud Firestore via VisitorService.
  */
 
 const STORAGE_KEYS = {
@@ -10,6 +12,13 @@ const STORAGE_KEYS = {
   USER: 'college_vms_user_v1',
   SETTINGS: 'college_vms_settings_v1'
 };
+
+// Helper: Calculate past date strings (YYYY-MM-DD)
+function getPastDateString(daysAgo) {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  return d.toISOString().split('T')[0];
+}
 
 // Default Seed Data
 const DEFAULT_VISITORS = [
@@ -227,23 +236,52 @@ const DEFAULT_NOTIFICATIONS = [
 const DEFAULT_USER = {
   name: 'Capt. R. K. Mukherjee',
   role: 'Chief Security Officer & Admin',
-  email: 'security.admin@college.edu',
+  email: 'admin@college.edu',
   phone: '+91 98450 11223',
   campus: 'Main North Campus, Block-A Gate 1',
   shift: 'General Security Shift (08:00 AM - 08:00 PM)'
 };
 
-// Helper: Calculate past date strings (YYYY-MM-DD)
-function getPastDateString(daysAgo) {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return d.toISOString().split('T')[0];
-}
-
-// Data Store Repository Object
+// Unified Data Store
 const DataStore = {
-  // Initialize storage if empty
+  isGateOfficer() {
+    try {
+      const cached = localStorage.getItem('college_vms_auth_user');
+      if (cached) {
+        const user = JSON.parse(cached);
+        return (user.email && user.email.toLowerCase().includes('security')) || 
+               (user.role && user.role.toLowerCase().includes('gate'));
+      }
+    } catch (e) {}
+    return false;
+  },
+
+  getVisitorsStorageKey() {
+    return this.isGateOfficer() ? 'college_vms_visitors_gate_officer' : STORAGE_KEYS.VISITORS;
+  },
+
+  getNotificationsStorageKey() {
+    return this.isGateOfficer() ? 'college_vms_notifications_gate_officer' : STORAGE_KEYS.NOTIFICATIONS;
+  },
+
+  clearGateOfficerData() {
+    localStorage.setItem('college_vms_visitors_gate_officer', JSON.stringify([]));
+    localStorage.setItem('college_vms_notifications_gate_officer', JSON.stringify([]));
+    return true;
+  },
+
   init() {
+    // If Gate Officer is active, ensure their list starts completely clear with 0 data
+    if (this.isGateOfficer()) {
+      if (localStorage.getItem('college_vms_visitors_gate_officer') === null) {
+        localStorage.setItem('college_vms_visitors_gate_officer', JSON.stringify([]));
+      }
+      if (localStorage.getItem('college_vms_notifications_gate_officer') === null) {
+        localStorage.setItem('college_vms_notifications_gate_officer', JSON.stringify([]));
+      }
+      return;
+    }
+
     if (!localStorage.getItem(STORAGE_KEYS.VISITORS)) {
       localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(DEFAULT_VISITORS));
     }
@@ -255,38 +293,42 @@ const DataStore = {
     }
   },
 
-  // Reset to default mock data
   resetAll() {
+    if (this.isGateOfficer()) {
+      return this.clearGateOfficerData();
+    }
     localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(DEFAULT_VISITORS));
     localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(DEFAULT_NOTIFICATIONS));
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(DEFAULT_USER));
     return true;
   },
 
-  // Visitor Operations
-  getVisitors() {
+  // Synchronous Local Fallback Methods
+  getVisitorsLocal() {
     this.init();
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.VISITORS)) || [];
+      const key = this.getVisitorsStorageKey();
+      const raw = localStorage.getItem(key);
+      if (raw !== null) {
+        return JSON.parse(raw) || [];
+      }
+      return this.isGateOfficer() ? [] : DEFAULT_VISITORS;
     } catch (e) {
-      console.error('Error reading visitors from storage:', e);
-      return DEFAULT_VISITORS;
+      return this.isGateOfficer() ? [] : DEFAULT_VISITORS;
     }
   },
 
-  getVisitorById(id) {
-    const visitors = this.getVisitors();
-    return visitors.find(v => v.id.toUpperCase() === id.trim().toUpperCase()) || null;
+  getVisitorByIdLocal(id) {
+    const list = this.getVisitorsLocal();
+    return list.find(v => v.id.toUpperCase() === id.trim().toUpperCase()) || null;
   },
 
-  addVisitor(visitorData) {
-    const visitors = this.getVisitors();
-    
-    // Generate next sequential Visitor ID
+  addVisitorLocal(visitorData) {
+    const visitors = this.getVisitorsLocal();
     const count = visitors.length + 1;
     const year = new Date().getFullYear();
     const formattedId = `VIS-${year}-${String(count).padStart(3, '0')}`;
-    
+
     const newVisitor = {
       id: formattedId,
       name: visitorData.name || '',
@@ -303,14 +345,13 @@ const DataStore = {
       status: 'Inside Campus',
       vehicleNo: visitorData.vehicleNo || 'None',
       belongings: visitorData.belongings || 'None',
-      notes: visitorData.notes || 'Registered at Main Reception.'
+      notes: visitorData.notes || 'Registered at Campus Gate.'
     };
 
     visitors.unshift(newVisitor);
-    localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(visitors));
+    localStorage.setItem(this.getVisitorsStorageKey(), JSON.stringify(visitors));
 
-    // Also trigger notification
-    this.addNotification({
+    this.addNotificationLocal({
       title: 'New Visitor Registered',
       message: `${newVisitor.name} has been registered to meet ${newVisitor.hostName} (${newVisitor.department}).`,
       visitorName: newVisitor.name,
@@ -322,17 +363,15 @@ const DataStore = {
     return newVisitor;
   },
 
-  updateVisitorStatus(id, newStatus) {
-    const visitors = this.getVisitors();
+  updateVisitorStatusLocal(id, newStatus) {
+    const visitors = this.getVisitorsLocal();
     const index = visitors.findIndex(v => v.id.toUpperCase() === id.trim().toUpperCase());
-    
     if (index === -1) return null;
 
     visitors[index].status = newStatus;
-    
     if (newStatus === 'Exited') {
       visitors[index].exitTime = formatCurrentTime();
-      this.addNotification({
+      this.addNotificationLocal({
         title: 'Visitor Exited',
         message: `${visitors[index].name} (${visitors[index].id}) has marked exit at ${visitors[index].exitTime}.`,
         visitorName: visitors[index].name,
@@ -347,49 +386,33 @@ const DataStore = {
       visitors[index].exitTime = null;
     }
 
-    localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(visitors));
+    localStorage.setItem(this.getVisitorsStorageKey(), JSON.stringify(visitors));
     return visitors[index];
   },
 
-  deleteVisitor(id) {
-    let visitors = this.getVisitors();
+  deleteVisitorLocal(id) {
+    let visitors = this.getVisitorsLocal();
     visitors = visitors.filter(v => v.id.toUpperCase() !== id.trim().toUpperCase());
-    localStorage.setItem(STORAGE_KEYS.VISITORS, JSON.stringify(visitors));
+    localStorage.setItem(this.getVisitorsStorageKey(), JSON.stringify(visitors));
     return true;
   },
 
-  // Dashboard Stats Computation
-  getDashboardStats() {
-    const visitors = this.getVisitors();
-    const today = new Date().toISOString().split('T')[0];
-
-    const todayVisitors = visitors.filter(v => v.date === today);
-    const currentlyInside = visitors.filter(v => v.status === 'Inside Campus');
-    const completedVisits = visitors.filter(v => v.status === 'Exited');
-    const totalVisitors = visitors.length;
-
-    return {
-      total: totalVisitors,
-      inside: currentlyInside.length,
-      today: todayVisitors.length,
-      completed: completedVisits.length,
-      insideList: currentlyInside,
-      recentList: visitors.slice(0, 6)
-    };
-  },
-
-  // Notifications Operations
-  getNotifications() {
+  getNotificationsLocal() {
     this.init();
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.NOTIFICATIONS)) || [];
+      const key = this.getNotificationsStorageKey();
+      const raw = localStorage.getItem(key);
+      if (raw !== null) {
+        return JSON.parse(raw) || [];
+      }
+      return this.isGateOfficer() ? [] : DEFAULT_NOTIFICATIONS;
     } catch (e) {
-      return DEFAULT_NOTIFICATIONS;
+      return this.isGateOfficer() ? [] : DEFAULT_NOTIFICATIONS;
     }
   },
 
-  addNotification(notif) {
-    const notifications = this.getNotifications();
+  addNotificationLocal(notif) {
+    const notifications = this.getNotificationsLocal();
     const newNotif = {
       id: `NOTIF-${Date.now().toString().slice(-4)}`,
       title: notif.title || 'Campus Alert',
@@ -402,38 +425,33 @@ const DataStore = {
       unread: true
     };
     notifications.unshift(newNotif);
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+    localStorage.setItem(this.getNotificationsStorageKey(), JSON.stringify(notifications));
     return newNotif;
   },
 
-  markNotificationRead(id) {
-    const notifications = this.getNotifications();
-    const item = notifications.find(n => n.id === id);
+  markNotificationReadLocal(id) {
+    const list = this.getNotificationsLocal();
+    const item = list.find(n => n.id === id);
     if (item) {
       item.unread = false;
-      localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+      localStorage.setItem(this.getNotificationsStorageKey(), JSON.stringify(list));
     }
     return true;
   },
 
-  markAllNotificationsRead() {
-    const notifications = this.getNotifications();
-    notifications.forEach(n => n.unread = false);
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications));
+  markAllNotificationsReadLocal() {
+    const list = this.getNotificationsLocal();
+    list.forEach(n => n.unread = false);
+    localStorage.setItem(this.getNotificationsStorageKey(), JSON.stringify(list));
     return true;
   },
 
-  clearAllNotifications() {
-    localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify([]));
+  clearAllNotificationsLocal() {
+    localStorage.setItem(this.getNotificationsStorageKey(), JSON.stringify([]));
     return true;
   },
 
-  getUnreadNotificationsCount() {
-    return this.getNotifications().filter(n => n.unread).length;
-  },
-
-  // User Profile Operations
-  getUser() {
+  getUserLocal() {
     this.init();
     try {
       return JSON.parse(localStorage.getItem(STORAGE_KEYS.USER)) || DEFAULT_USER;
@@ -442,11 +460,68 @@ const DataStore = {
     }
   },
 
-  updateUser(userData) {
-    const currentUser = this.getUser();
-    const updated = { ...currentUser, ...userData };
+  updateUserLocal(userData) {
+    const current = this.getUserLocal();
+    const updated = { ...current, ...userData };
     localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(updated));
     return updated;
+  },
+
+  // Unified Async Facade (Delegates to VisitorService)
+  async getVisitors() {
+    return await VisitorService.getVisitors();
+  },
+
+  async getVisitorById(id) {
+    return await VisitorService.getVisitorById(id);
+  },
+
+  async addVisitor(data) {
+    return await VisitorService.addVisitor(data);
+  },
+
+  async updateVisitorStatus(id, newStatus) {
+    return await VisitorService.updateVisitorStatus(id, newStatus);
+  },
+
+  async deleteVisitor(id) {
+    return await VisitorService.deleteVisitor(id);
+  },
+
+  async getDashboardStats() {
+    return await VisitorService.getDashboardStats();
+  },
+
+  async getNotifications() {
+    return await VisitorService.getNotifications();
+  },
+
+  async addNotification(notif) {
+    return await VisitorService.addNotification(notif);
+  },
+
+  async markNotificationRead(id) {
+    return await VisitorService.markNotificationRead(id);
+  },
+
+  async markAllNotificationsRead() {
+    return await VisitorService.markAllNotificationsRead();
+  },
+
+  async clearAllNotifications() {
+    return await VisitorService.clearAllNotifications();
+  },
+
+  async getUnreadNotificationsCount() {
+    return await VisitorService.getUnreadNotificationsCount();
+  },
+
+  async getUser() {
+    return await VisitorService.getUserProfile();
+  },
+
+  async updateUser(data) {
+    return await VisitorService.updateUserProfile(data);
   }
 };
 
@@ -464,17 +539,15 @@ function formatCurrentTime() {
 
 // Generate an SVG QR code graphic visualization
 function generateQRCodeSVG(dataString) {
-  // Generates a decorative high-contrast QR visual matrix based on text hash
   let hash = 0;
   for (let i = 0; i < dataString.length; i++) {
     hash = ((hash << 5) - hash) + dataString.charCodeAt(i);
     hash |= 0;
   }
   
-  const size = 21; // 21x21 standard QR grid
+  const size = 21; // standard QR grid size
   let rects = '';
   
-  // Finder pattern markers (top-left, top-right, bottom-left)
   function addFinderPattern(startX, startY) {
     rects += `<rect x="${startX}" y="${startY}" width="7" height="7" fill="#0f172a" />`;
     rects += `<rect x="${startX + 1}" y="${startY + 1}" width="5" height="5" fill="#ffffff" />`;
@@ -485,11 +558,9 @@ function generateQRCodeSVG(dataString) {
   addFinderPattern(14, 0);
   addFinderPattern(0, 14);
 
-  // Generate pseudo-random matrix for the rest of the QR grid
   let seed = Math.abs(hash) || 1234567;
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      // Skip finder patterns
       if ((x < 8 && y < 8) || (x >= 13 && y < 8) || (x < 8 && y >= 13)) {
         continue;
       }
@@ -506,5 +577,5 @@ function generateQRCodeSVG(dataString) {
   </svg>`;
 }
 
-// Ensure DataStore initializes on script load
+// Initialize on script load
 DataStore.init();

@@ -9,13 +9,15 @@
  * 4. Copy the firebaseConfig JSON and paste your credentials into the object below.
  */
 
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT_ID.appspot.com",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDWxQOCf5mTYgeMWyPbYMRg0zUkSxXwuNg",
+  authDomain: "digital-visitor-management.firebaseapp.com",
+  projectId: "digital-visitor-management",
+  storageBucket: "digital-visitor-management.firebasestorage.app",
+  messagingSenderId: "786179967110",
+  appId: "1:786179967110:web:5807ba4d50ca5546006907",
+  measurementId: "G-P4VGK7YPZ7"
 };
 
 const FirebaseApp = {

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Digital Visitor Management System for College - Frontend",
   "scripts": {
+    "build": "echo 'Build complete'",
     "dev": "serve frontend -p 3000",
     "start": "serve frontend -p 3000",
     "preview": "serve frontend -p 3000"
